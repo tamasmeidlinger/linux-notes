@@ -289,3 +289,241 @@ sudo systemctl start my_service
 sudo systemctl status my_service
 sudo journalctl -u my_service -f
 ```
+
+# Available Memory
+
+In Linux, the “**available**” memory refers to the memory that is not in use by the operating system or applications. The available memory is also referred to as “**unused**” memory. A user can schedule or decide to initiate a new process on the system by looking at the available memory.
+
+## free
+
+The “free” command is utilized with the “m” option to present the available, used, shared and total amount of physical memory.
+
+```bash
+free -m
+```
+
+| Metric       | What it tells you                            |
+| ------------ | -------------------------------------------- |
+| `total`      | Total usable RAM                             |
+| `used`       | RAM currently counted as used                |
+| `free`       | Completely unused RAM                        |
+| `buff/cache` | RAM used for buffers and caches              |
+| `available`  | Estimated RAM available for new applications |
+
+## top
+
+This command provides an overview of the running processes and their resource usage, including memory usage, available memory, and many more in the “Mem” field
+
+Power users can hit `f` inside top for advanced options like:
+
+- Change metric used for ordering processes dynamically
+- Toggle colors for quicker identification
+- Customize refresh speed for a balancing smoothness vs accuracy
+
+## vmstat
+
+The “vmstat” command with the “s” option provides detailed states about system memory usage, including the “total”, “used”, “active”, “inactive”, and “available”memory
+
+```bash
+vmstat -s
+```
+
+## cat /proc/meminfo
+
+The “/proc/meminfo” file displays detailed information about system memory usage, including the amount of available memory. It shows the information in the “MemAvailable” field
+
+```bash
+cat /proc/meminfo
+```
+
+## Free vs. Available memory explained
+
+**Free memory** is the amount of memory (RAM) that is currently not used for anything. For this reason, especially on servers, I like to consider free memory as wasted memory. Once your applications/processes have launched, and considerable uptime has passed, this number should almost always be small.
+
+**Available memory** is the amount of memory that is available for allocation to new or existing processes. Available memory is then an estimation of how much memory is available for use without swapping.
+
+The difference between free vs. available memory in Linux is that free memory is not in use and sits there doing nothing. In contrast, available memory is used memory that includes but is not limited to caches and buffers that can be freed without the performance penalty of using swap.
+
+## Why are available and free different?
+
+The key concept is Linux uses RAM for caching, even when applications aren't using it.
+
+Imagine your computer has 16 GB of RAM.
+
+You have:
+- 5 GB used by applications.
+- 2 GB completely unused.
+- 9 GB used for caching.
+
+Now imagine you open another application that needs 4 GB of RAM.
+
+Linux doesn't need to immediately use swap. It can reclaim some of that 9 GB used for caching.
+
+# Process Management
+
+Linux treats every running program as a process. Process management commands help view, control, and manipulate these processes. Key commands: `ps aux` shows running processes, `top` provides live system view, `kill -SIGTERM pid` gracefully stops processes, `kill -SIGKILL pid` forcefully terminates processes. Essential for understanding and controlling Linux system operations effectively.
+
+## Runaway process
+
+A runaway process is a process that behaves unexpectedly and consumes excessive system resources, often because of a bug or programming error.
+
+For example:
+- A process gets stuck in an infinite loop.
+- A process continuously consumes CPU.
+- A process keeps allocating memory without releasing it.
+- A process creates child processes uncontrollably.
+
+## Ghost/zombie process
+
+The term ghost process is less formally defined in Linux. It is sometimes used to describe a process that appears to exist but is no longer functioning normally.
+
+A common related concept is a **zombie process**.
+
+A zombie process:
+- Has finished executing.
+- No longer runs or consumes CPU.
+- Still has an entry in the process table.
+- Waits for its parent process to collect its exit status.
+
+## Common Process Management Challanges
+
+1. Runaway processes eating resources – For example, loggers filling disks or code loops crowding out RAM
+2. Ghost processes clinging on after finishing – Defunct remains of once active processes
+3. Failure to set appropriate process priorities – Critical customer-facing apps denied resources
+4. Difficulty tracing issues to specific processes – Is it the web app or database process at fault?
+
+# Commands for Managing Processes
+
+| Purpose           |                      Commands |
+| ----------------- | ----------------------------: |
+| Monitoring        |          `top`, `ps`, `pidof` |
+| Controlling       | `bg`, `fg`, `kill`, `killall` |
+| Priority          |              `nice`, `renice` |
+| Resource Tracking |            `df`, `du`, `free` |
+
+## ps
+
+While interactive top output serves most real-time analytical needs, ps provides static snapshots. Think of running ps periodically as taking pictures of processes state over time.
+
+The simplest invocation displays processes tied to the current terminal:
+
+```bash
+ps
+```
+
+### ps aux
+
+- All processes – not just terminal tied ones
+- Additional metadata like environments variables
+
+| Option | Meaning                 | Description                                                              |
+| ------ | ----------------------- | ------------------------------------------------------------------------ |
+| `a`    | All users' terminals    | Show processes associated with terminals from all users, not just yours. |
+| `u`    | User-oriented format    | Display processes in a detailed, user-friendly format.                   |
+| `x`    | No controlling terminal | Include processes that aren't attached to a terminal.                    |
+
+```bash
+ps aux
+```
+
+### Custom columns
+
+```bash
+# Show all processes and their priorities
+ps -eo pid,comm,ni,pri
+
+# Show a specific process
+ps -p 1234 -o pid,comm,ni,pri
+
+# Show processes sorted by nice value
+ps -eo pid,comm,ni,pri --sort=ni
+```
+
+| Option | Meaning       | Description                                       |
+| ------ | ------------- | ------------------------------------------------- |
+| -e     | Every process | Select all processes running on the system.       |
+| -o     | Output format | Specify which columns to display and their order. |
+
+| Column    | Meaning                    |
+| --------- | -------------------------- |
+| `PID`     | Process ID                 |
+| `COMMAND` | Process name               |
+| `NI`      | Nice value                 |
+| `PRI`     | Kernel scheduling priority |
+
+The key advantage of ps over its real-time sibling top is collecting **historical process state data**:
+
+```bash
+ps aux --sort=%cpu > cpu_processes.log
+```
+
+The above grabs a CPU % ordered snapshot into a logged file. Comparing multiple such log files gathered over days or weeks gives trend insights.
+
+For example, ps logs can clearly show that cron jobs start spiking site reliability after a certain package update.
+
+In summary, use ps for both tactical snapshots and strategic historical process state analysis.
+
+## kill
+
+Despite best efforts to optimize Linux for stability, processes sometimes get unresponsive or resource hungry. kill gives administrators manual termination capabilities for such scenarios.
+
+For example, to remove a ‘zombie‘ process clinging onto resources beyond its functioning:
+
+```bash
+kill 1234
+```
+
+This sends a polite termination request to process ID 1234. Most well written Linux programs handle such signals smoothly – saving state before shutting down handlers and threads gracefully.
+
+However, some processes ignore this termination plea or take too long to wrap up. In such cases, `kill -9` can be used to force immediate stoppage:
+
+### killall
+
+`killall` is an alternative way that instead of needing the PID, accepts process names:
+
+```bash
+killall vlc
+```
+
+This attempts terminating all instances of the VLC media application running. Add `-9` if needed for forced shutdown of misbehaving VLC processes.
+
+## nice and renice
+
+Influence Process Priority
+
+By default, regular Linux processes have a priority value of 0 but administrators can influence relative weighting via `nice` and `renice`
+
+### nice
+
+Set starting priority when launching processes
+
+```bash
+nice -n 15 backup.sh
+```
+
+This starts the backup script with favorable priority. Think of nice as allowing higher or lower initial positioning in the process queue.
+
+| Nice value | Meaning                     |
+| ---------: | --------------------------- |
+|      `-20` | Highest scheduling priority |
+|        `0` | Default priority            |
+|       `19` | Lowest scheduling priority  |
+
+### renice
+
+Alters priority of already running processes
+
+```bash
+renice +5 2304
+```
+
+Here we are reducing preference of an existing process ID 2304 to promote sharing of resources.
+
+### NI vs PRI
+
+| NI (Nice value)                           | PRI (Priority)                                             |
+| ----------------------------------------- | ---------------------------------------------------------- |
+| User-space scheduling preference          | Kernel scheduling priority                                 |
+| Can be changed using `nice` or `renice`   | Calculated and managed by the kernel                       |
+| Range: `-20` to `19` for normal processes | Depends on scheduling policy and kernel                    |
+| Lower value = higher priority             | Lower value = higher priority (for normal Linux processes) |

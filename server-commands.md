@@ -477,6 +477,13 @@ This sends a polite termination request to process ID 1234. Most well written Li
 
 However, some processes ignore this termination plea or take too long to wrap up. In such cases, `kill -9` can be used to force immediate stoppage:
 
+### List signals
+
+```bash
+kill -L
+# or -l if -L is not available
+```
+
 ### killall
 
 `killall` is an alternative way that instead of needing the PID, accepts process names:
@@ -527,3 +534,11 @@ Here we are reducing preference of an existing process ID 2304 to promote sharin
 | Can be changed using `nice` or `renice`   | Calculated and managed by the kernel                       |
 | Range: `-20` to `19` for normal processes | Depends on scheduling policy and kernel                    |
 | Lower value = higher priority             | Lower value = higher priority (for normal Linux processes) |
+
+### Processes
+
+https://linuxconfig.org/understanding-foreground-and-background-linux-processes
+
+# User Management
+
+Linux user management allows multiple users to interact with the system in isolation. Includes creating, deleting, modifying users and groups, assigning permissions and ownership. Key commands: `adduser/useradd` creates users, `deluser/userdel` removes users, `passwd` manages passwords, `su` switches users. Essential for providing proper accessibility and maintaining Linux system security.

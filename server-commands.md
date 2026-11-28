@@ -542,3 +542,145 @@ https://linuxconfig.org/understanding-foreground-and-background-linux-processes
 # User Management
 
 Linux user management allows multiple users to interact with the system in isolation. Includes creating, deleting, modifying users and groups, assigning permissions and ownership. Key commands: `adduser/useradd` creates users, `deluser/userdel` removes users, `passwd` manages passwords, `su` switches users. Essential for providing proper accessibility and maintaining Linux system security.
+
+## User Management Commands (Linux)
+
+| Command / Flag  | Meaning                                    | Example                                  | Result                                                |
+| --------------- | ------------------------------------------ | ---------------------------------------- | ----------------------------------------------------- |
+| `useradd`       | Create a new user                          | `sudo useradd tamas`                     | Creates user `tamas`                                  |
+| `-m`            | Create the user's home directory           | `sudo useradd -m tamas`                  | Creates `/home/tamas`                                 |
+| `-d DIR`        | Specify the home directory                 | `sudo useradd -m -d /home/custom tamas`  | Sets custom home directory                            |
+| `-s SHELL`      | Specify the user's login shell             | `sudo useradd -s /bin/bash tamas`        | Sets Bash as login shell                              |
+| `-G GROUPS`     | Add user to supplementary groups           | `sudo useradd -G wheel,docker tamas`     | Adds user to `wheel` and `docker`                     |
+| `-u UID`        | Specify the user ID                        | `sudo useradd -u 1001 tamas`             | Assigns UID 1001                                      |
+| `-c COMMENT`    | Add user information/comment               | `sudo useradd -c "Tamas" tamas`          | Sets user description                                 |
+| `passwd`        | Set or change a user's password            | `sudo passwd tamas`                      | Changes password                                      |
+| `passwd -l`     | Lock a user's password                     | `sudo passwd -l tamas`                   | Locks password authentication                         |
+| `passwd -u`     | Unlock a user's password                   | `sudo passwd -u tamas`                   | Unlocks password authentication                       |
+| `passwd -d`     | Delete a user's password                   | `sudo passwd -d tamas`                   | Removes password                                      |
+| `usermod`       | Modify an existing user                    | `sudo usermod -s /bin/bash tamas`        | Changes user's shell                                  |
+| `-aG`           | Append user to supplementary groups        | `sudo usermod -aG wheel tamas`           | Adds user to `wheel` without removing existing groups |
+| `-G`            | Replace supplementary group membership     | `sudo usermod -G wheel tamas`            | Replaces existing supplementary groups                |
+| `-l`            | Rename a user                              | `sudo usermod -l newname tamas`          | Renames user                                          |
+| `-d`            | Change user's home directory               | `sudo usermod -d /home/newname tamas`    | Changes home directory path                           |
+| `-m`            | Move contents to the new home directory    | `sudo usermod -d /home/newname -m tamas` | Moves home directory contents                         |
+| `userdel`       | Delete a user                              | `sudo userdel tamas`                     | Deletes user account                                  |
+| `-r`            | Delete user and home directory             | `sudo userdel -r tamas`                  | Deletes account and home directory                    |
+| `id`            | Display user and group IDs                 | `id tamas`                               | Shows UID, GID and groups                             |
+| `whoami`        | Display current username                   | `whoami`                                 | Prints current user                                   |
+| `who`           | Display currently logged-in users          | `who`                                    | Lists logged-in sessions                              |
+| `w`             | Display logged-in users and their activity | `w`                                      | Shows users and running processes                     |
+| `groups`        | Display a user's groups                    | `groups tamas`                           | Lists group memberships                               |
+| `getent passwd` | Display user account entries               | `getent passwd`                          | Lists users from configured account databases         |
+| `chage`         | Manage password expiration and aging       | `sudo chage -l tamas`                    | Displays password aging information                   |
+| `chage -M N`    | Set maximum password age in days           | `sudo chage -M 90 tamas`                 | Password expires after 90 days                        |
+| `chage -E DATE` | Set account expiration date                | `sudo chage -E 2027-01-01 tamas`         | Account expires on specified date                     |
+
+## Group Management Commands
+
+| Command / Flag | Meaning                    | Example                                   | Result                      |
+| -------------- | -------------------------- | ----------------------------------------- | --------------------------- |
+| `groupadd`     | Create a group             | `sudo groupadd developers`                | Creates `developers` group  |
+| `-g GID`       | Specify group ID           | `sudo groupadd -g 1500 developers`        | Creates group with GID 1500 |
+| `groupdel`     | Delete a group             | `sudo groupdel developers`                | Deletes group               |
+| `groupmod`     | Modify a group             | `sudo groupmod -n programmers developers` | Renames group               |
+| `-n`           | Specify a new group name   | `sudo groupmod -n programmers developers` | Renames group               |
+| `-g`           | Change group ID            | `sudo groupmod -g 1600 developers`        | Changes GID to 1600         |
+| `gpasswd -a`   | Add a user to a group      | `sudo gpasswd -a tamas developers`        | Adds user to group          |
+| `gpasswd -d`   | Remove a user from a group | `sudo gpasswd -d tamas developers`        | Removes user from group     |
+
+## Important Configuration Files
+
+| File              | Description                                                  | Example                 |
+| ----------------- | ------------------------------------------------------------ | ----------------------- |
+| `/etc/passwd`     | Stores user account information (not passwords)              | `cat /etc/passwd`       |
+| `/etc/shadow`     | Stores password hashes and password aging information        | `sudo cat /etc/shadow`  |
+| `/etc/group`      | Stores group information and memberships                     | `cat /etc/group`        |
+| `/etc/gshadow`    | Stores secure group information                              | `sudo cat /etc/gshadow` |
+| `/etc/skel/`      | Contains default files copied into new user home directories | `ls -la /etc/skel/`     |
+| `/etc/login.defs` | Defines default settings for user account management         | `cat /etc/login.defs`   |
+
+## Useful Examples
+
+```bash
+# Create a user with a home directory
+sudo useradd -m tamas
+
+# Set the user's password
+sudo passwd tamas
+
+# Add user to wheel (sudo privileges on Fedora)
+sudo usermod -aG wheel tamas
+
+# Check user information
+id tamas
+
+# List all groups
+getent group
+
+# List all users
+getent passwd
+
+# Switch to another user
+su - tamas
+
+# Execute a command as another user
+sudo -u tamas whoami
+
+# Delete a user and their home directory
+sudo userdel -r tamas
+```
+
+# Disks and Filesystems
+
+Linux uses various filesystems to organize, store, and retrieve data from storage devices. Popular filesystems include EXT4 (robust for Linux volumes), FAT32 (compatible with all OS for removable media), NTFS, and Btrfs. Each has specific advantages and use cases. Use `df -T` command to display filesystem types, disk space usage, and mounted device information.
+
+## Filesystems, Layouts, and Mounts
+
+Planning a Linux installation starts with deciding how storage should be divided. A partition marks a region on a disk, while its filesystem organizes data for access through a mount point in Linux’s directory tree.
+
+- run `lsblk -f` to see device names, filesystem types, UUIDs and mount points.
+
+### Linux partition
+
+A Linux disk can use a partition table to divide a device into regions, and a filesystem organizes data within a region.
+
+Linux exposes a filesystem’s directories through a mount point in its directory tree.
+
+Think of a disk as a book. Its partition table is the index and its partitions are sections. Linux can also use filesystems on logical volumes, software RAID devices, image files or whole devices without conventional partitions.
+
+LVM (Logical Volume Manager) builds logical volumes from physical storage through volume groups, adding a layer to inspect between disks and filesystems.
+
+The partition table records region boundaries and types so firmware and operating systems can identify partitions during startup and normal operation.
+
+Partition paths combine a device name and a partition number, with family-specific separators such as /dev/nvme0n1p1. These device-node paths can change with hardware or enumeration, while filesystem labels identify filesystems.
+
+MBR (Master Boot Record) and GPT (GUID Partition Table) are disk partitioning schemes that define how partitions are structured and addressed on a storage drive. GPT is the modern standard for UEFI-based systems, drives over 2 TB, and Windows 11, while MBR is a legacy scheme tied to older BIOS systems and smaller drives.
+
+BIOS (Basic Input/Output System) and UEFI (Unified Extensible Firmware Interface) are low-level motherboard firmware interfaces that initialize hardware and start your operating system when you power on a computer. UEFI is the modern replacement for legacy BIOS, offering faster startup times, larger drive support, graphical menus, and stronger security.
+
+## Disk, partition table, partition and mount point
+
+For example, `/dev/sda` and `/dev/nvme0n1` identify disks, while `/dev/sda1` and `/dev/nvme0n1p1` identify partitions.
+
+GPT is common with modern UEFI layouts. The table above shows how a partition device differs from its filesystem and mount point.
+
+| Layer           | What it describes                            | Example to recognize      |
+| --------------- | -------------------------------------------- | ------------------------- |
+| Device          | The storage unit presented by the kernel     | `/dev/sda`                |
+| Partition table | Boundaries and types on a disk               | GPT or MBR                |
+| Partition       | A bounded device region                      | `/dev/sda1`               |
+| Filesystem      | Organization of files and metadata           | ext4, Btrfs, XFS, NTFS    |
+| Mount point     | Directory through which mounted files appear | `/`, `/home`, `/mnt/data` |
+
+The root filesystem holds the running Linux system, so changes to its storage can affect the environment performing the change. A live installer or recovery environment lets you inspect and manage a system partition while it is not serving as the active root.
+
+## How Linux installation layouts fit together
+
+UEFI uses an EFI System Partition (ESP) for firmware-readable boot files, which a dual-boot installer may reuse. A basic Linux installation assigns / to its root filesystem.
+
+A separate /home partition can keep user files apart from the root filesystem, though it can complicate resizing.
+
+The EFI system partition (ESP) is a dedicated storage partition used by Unified Extensible Firmware Interface (UEFI) computers to boot operating systems and run pre-boot utilities. It acts as the bridge between hardware firmware and the OS, replacing the legacy Master Boot Record (MBR) boot model.
+
+Swap can use a file or a dedicated partition. A file can be adjusted without changing the partition table.

@@ -684,3 +684,195 @@ A separate /home partition can keep user files apart from the root filesystem, t
 The EFI system partition (ESP) is a dedicated storage partition used by Unified Extensible Firmware Interface (UEFI) computers to boot operating systems and run pre-boot utilities. It acts as the bridge between hardware firmware and the OS, replacing the legacy Master Boot Record (MBR) boot model.
 
 Swap can use a file or a dedicated partition. A file can be adjusted without changing the partition table.
+
+For hibernation, follow the distribution’s documented swap-capacity requirements.
+
+**Hibernation vs sleep**
+- Sleep (suspend): Your computer keeps its RAM powered, but most other components turn off. Your open programs remain in RAM.
+- Hibernation: Linux saves the contents of RAM to disk and then completely powers off the computer.
+
+| Filesystem | Useful detail                                 |
+| ---------- | --------------------------------------------- |
+| Ext4       | Common general-purpose choice with journaling |
+| Btrfs      | Snapshots and checksums                       |
+| XFS        | Journaling and online expansion               |
+
+Filesystem repair tools expect a particular format and may require the filesystem to be unmounted. Identify the filesystem before selecting a checker, and do not run a repair operation against a mounted root system.
+
+## Ext4
+
+**General-purpose filesystem**
+
+Ext4 (Fourth Extended Filesystem) is one of the most widely used Linux filesystems.
+
+### Journaling
+
+Before making certain changes to the filesystem, Ext4 records information about the intended changes in a special area called a *journal*.
+
+Why?
+
+Imagine your computer loses power while writing a file. The filesystem might be left in an inconsistent state.
+
+With journaling, the filesystem can use its journal during recovery to help restore consistency.
+
+Important: Journaling doesn't guarantee that every file's contents are protected from corruption or data loss.
+
+**In simple terms:** Journaling helps the filesystem recover after unexpected crashes or power failures.
+
+---
+
+## Btrfs
+
+**Advanced filesystem**
+
+Btrfs (B-tree Filesystem) is a modern Linux filesystem with several advanced features.
+
+### Snapshots
+
+A snapshot captures the state of a filesystem or subvolume at a particular point in time.
+
+Imagine:
+
+1. Your Fedora system works perfectly.
+2. You create a snapshot.
+3. You install an update.
+4. The update breaks something.
+5. You can potentially roll back to the earlier snapshot.
+
+Think of it like a restore point.
+
+### Checksums
+
+A checksum is a value calculated from data.
+
+Btrfs calculates and stores checksums for data and metadata. When reading data, it calculates the checksum again and compares it with the stored one.
+
+If they don't match, Btrfs can detect that the data has changed unexpectedly.
+
+With redundant copies available, Btrfs can also repair certain corruption automatically.
+
+**In simple terms:**
+- Snapshots = capture and potentially restore filesystem states.
+- Checksums = detect data corruption.
+
+---
+
+## XFS
+
+**High-performance filesystem**
+
+XFS is a mature Linux filesystem designed to handle large filesystems and heavy workloads.
+
+### Journaling
+
+Similar to Ext4, XFS uses journaling to help maintain filesystem consistency after crashes.
+
+### Online expansion
+
+This means you can increase the size of an XFS filesystem while it is mounted and actively being used.
+
+For example:
+
+1. You have a 100 GB partition.
+2. You increase the underlying partition to 200 GB.
+3. You expand the XFS filesystem to use the additional space.
+4. You don't need to unmount the filesystem to expand it.
+
+Important: XFS supports growing, but not shrinking.
+
+---
+
+## Quick Comparison
+
+| Feature          | Ext4                     | Btrfs                 | XFS                      |
+| ---------------- | ------------------------ | --------------------- | ------------------------ |
+| Journaling       | Yes                      | Copy-on-Write instead | Yes                      |
+| Snapshots        | No native support        | Yes                   | No native support        |
+| Checksums        | Metadata (not file data) | Data and metadata     | Metadata (not file data) |
+| Online expansion | Yes                      | Yes                   | Yes                      |
+| Shrinking        | Yes, offline             | Yes, with limitations | No                       |
+
+## What Should You Remember?
+
+- **Ext4:** Reliable, straightforward, general-purpose filesystem.
+- **Btrfs:** Snapshots, checksums and advanced storage management.
+- **XFS:** Good for large filesystems and workloads, with online expansion.
+
+### Important Concept: Copy-on-Write (CoW)
+
+Ext4 and XFS use journaling, while Btrfs uses a different approach called Copy-on-Write (CoW).
+
+CoW means that instead of overwriting existing data directly, the filesystem writes modified data to a new location and then updates its references.
+
+This helps Btrfs create efficient snapshots and maintain data consistency.
+
+# Mount
+
+A **mount point** is a directory in Linux where a filesystem becomes accessible.
+
+A **mount path** is simply the path to that directory.
+
+```bash
+lsblk -f
+df -h
+```
+
+# Blocks
+
+A **block** is a fixed-size unit of storage that a filesystem uses to organize and store data on a disk.
+
+Think of a disk as a warehouse divided into small storage spaces. Each space represents a block.
+
+### How do blocks work?
+
+For example, if a filesystem uses 4 KB blocks and you save a 10 KB file:
+
+| Block     | Storage used | Unused space |
+| --------- | -----------: | -----------: |
+| Block 1   |         4 KB |         0 KB |
+| Block 2   |         4 KB |         0 KB |
+| Block 3   |         2 KB |         2 KB |
+| **Total** |    **10 KB** |     **2 KB** |
+
+The file occupies 3 blocks (12 KB of allocated space).
+
+The unused 2 KB in the last block is called **internal fragmentation**.
+
+### Why do blocks exist?
+
+Instead of managing every individual byte separately, filesystems manage storage in fixed-size chunks called blocks.
+
+This makes allocating, tracking and organizing disk space easier.
+
+### Remember
+
+- A block is a small unit of storage.
+- Files are stored across one or more blocks.
+- Block size determines the minimum allocation unit.
+- Common filesystem block size: 4 KB.
+- The filesystem manages blocks automatically.
+
+# Filesystem Hierarchy Standard
+
+https://docs.redhat.com/en/documentation/red_hat_enterprise_linux/4/html/reference_guide/s1-filesystem-fhs
+
+# Blocks and other useful knowledge
+
+https://www.linuxjournal.com/content/understanding-linux-filesystems-inodes-block-sizes-and-data-structures
+
+# Computers fast as f
+
+```bash
+cat /home/tamas/notes.txt
+```
+
+Behind that one command:
+
+1. Linux resolves the directory path.
+2. The filesystem finds the file's metadata.
+3. The filesystem identifies where its data lives.
+4. Linux requests the corresponding storage data.
+5. The SSD controller translates logical addresses into physical NAND locations.
+6. The data travels back into RAM.
+7. Linux gives the contents to cat.
+8. Your terminal displays the text.
